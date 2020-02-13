@@ -69,11 +69,7 @@ function calculateIntakeEndDate(intakes, stock, frequency, weekDays) {
             totalDaysForWeekly += 1;
         }
         
-        if (isNeedPillsToday) {
-            totalDays = totalDaysForWeekly;
-        } else {
-            totalDays = totalDaysForWeekly;
-        }
+        totalDays = totalDaysForWeekly;
     }
     
     newDate = addDays(currentDate, totalDays);
