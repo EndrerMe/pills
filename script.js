@@ -3,7 +3,7 @@ function calculateIntakeEndDate(intakes, stock, frequency, weekDays) {
     const currentHour = currentDate.getHours();
     const currentMinutes = currentDate.getMinutes();
     let totalPillsPerDay = 0;
-    let addDaysToTotal = 0;
+    let skipPillsForToday = 0;
     let isNeedPillsToday = false;
     let timeForLastPills;
     let totalDays;
@@ -13,22 +13,17 @@ function calculateIntakeEndDate(intakes, stock, frequency, weekDays) {
         totalPillsPerDay += intakes[i].pills;
         const hour = Number.parseInt(intakes[i].time.split(':')[0]);
         const minutes = Number.parseInt(intakes[i].time.split(':')[1]);
-
         if ((currentHour < hour) || 
         (hour === currentHour && currentMinutes < minutes)) {
-            timeForLastPills = {
-                hour: Number.parseInt(intakes[0].time.split(':')[0]),
-                minutes: Number.parseInt(intakes[0].time.split(':')[1])
-            };
             isNeedPillsToday = true;
             continue
         } 
-
         timeForLastPills = {
             hour: hour,
             minutes: minutes
         };
 
+        skipPillsForToday += intakes[i].pills;
         isNeedPillsToday = false;
     }
 
@@ -46,46 +41,38 @@ function calculateIntakeEndDate(intakes, stock, frequency, weekDays) {
 
     if (frequency === 'weekly') {
 
-        const currentDay = currentDate.getDay();
+        let currentDay = currentDate.getDay();
         let daysForPills = [];
-        let daysPerWeek = 0;
-        let totalWeeks;
-        let pillsPerWeek;
-        let skipDaysPerWeek = 0;
-        let totalDaysForPells;
         let dayNumber = 0;
+        let totalDaysForWeekly = -1;
         for (day in weekDays) {
             dayNumber++
             if (weekDays[day]) {
-                daysPerWeek += 1;
-                lastDayForPills = dayNumber;
                 daysForPills.push(dayNumber);
             }
         }
 
-        pillsPerWeek = daysPerWeek * totalPillsPerDay
-        totalWeeks = stock / pillsPerWeek;
-        skipDaysPerWeek = 7 - daysPerWeek;
-        totalDaysForPells = stock / totalPillsPerDay;
-        skipdays = skipDaysPerWeek * totalWeeks;
-        totalDays = skipdays + totalDaysForPells;
-
-        for (let i = 0; i < daysForPills.length; i++) {
-            if (currentDay === daysForPills[i]) {
-                totalDays += isNeedPillsToday ? addDaysToTotal : 0;
-                newDate = addDays(currentDate, totalDays);
-                newDate.setHours(timeForLastPills.hour, timeForLastPills.minutes)
-                console.log(newDate)
-                return;
+        while (stock > 0) {
+            for (let i = 0; i < daysForPills.length; i++) {
+                if (daysForPills[i] === currentDay) {
+                    stock -= skipPillsForToday === 0 ? totalPillsPerDay : skipPillsForToday;
+                    skipPillsForToday = 0;
+                }
             }
-        }
 
-        if (currentDay > lastDayForPills) {
-            totalDays -= currentDay - lastDayForPills;
-        }
+            currentDay += 1;
 
-        if (currentDay < lastDayForPills) {
-            totalDays -= lastDayForPills - currentDay;
+            if (currentDay > 7) {
+                currentDay = 1;
+            }
+
+            totalDaysForWeekly += 1;
+        }
+        
+        if (isNeedPillsToday) {
+            totalDays = totalDaysForWeekly;
+        } else {
+            totalDays = totalDaysForWeekly;
         }
     }
     
@@ -122,7 +109,7 @@ function callCalculate() {
         tuesday: false,
         wednesday: true,
         thursday: false,
-        friday: false,
+        friday: true,
         saturday: false,
         sunday: false,
     };
